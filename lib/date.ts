@@ -13,7 +13,9 @@ export function todayKST(now: Date = new Date()): string {
 }
 
 export function isYmd(value: unknown): value is string {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && toDate(value).toISOString().startsWith(value);
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const time = toDate(value).getTime();
+  return !Number.isNaN(time) && fromDate(new Date(time)) === value;
 }
 
 // "YYYY-MM-DD" ↔ Prisma @db.Date 값 (UTC 자정)
