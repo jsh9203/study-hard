@@ -13,7 +13,7 @@ type LogRow = {
   userId: number;
   studyDate: Date;
   durationSec: number;
-  photoUrl: string;
+  photoUrl: string | null;
   memo: string | null;
   createdAt: Date;
   user: { name: string };
@@ -79,14 +79,16 @@ export async function DELETE(_request: Request, ctx: RouteContext<"/api/logs/[id
   const log = await prisma.studyLog.findUnique({ where: { id } });
   if (!log) return fail("기록을 찾을 수 없습니다", 404);
 
-  try {
-    await del(log.photoUrl);
-  } catch (e) {
-    if (e instanceof BlobNotFoundError) {
-      console.warn(`[logs/${id}] blob not found, skip:`, log.photoUrl);
-    } else {
-      console.error(`[logs/${id}] blob delete failed:`, e);
-      return fail("사진 삭제에 실패했습니다. 잠시 후 다시 시도하세요", 502);
+  if (log.photoUrl) {
+    try {
+      await del(log.photoUrl);
+    } catch (e) {
+      if (e instanceof BlobNotFoundError) {
+        console.warn(`[logs/${id}] blob not found, skip:`, log.photoUrl);
+      } else {
+        console.error(`[logs/${id}] blob delete failed:`, e);
+        return fail("사진 삭제에 실패했습니다. 잠시 후 다시 시도하세요", 502);
+      }
     }
   }
 

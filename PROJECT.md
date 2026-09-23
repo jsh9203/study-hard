@@ -41,7 +41,7 @@
 ## 📊 데이터 모델 (`prisma/schema.prisma`)
 - **User**: name, color, deletedAt(소프트 삭제)
 - **Goal**: userId, examName, target, startDate(평일), examDate(D-day), resultDate, status(ACTIVE/ACHIEVED/FAILED/CANCELLED), finalPenalty(스냅샷), penaltyWaived, closedAt, settledAt
-- **StudyLog**: userId, studyDate(@db.Date), durationSec, photoUrl, photoPath, memo
+- **StudyLog**: userId, studyDate(@db.Date), durationSec, photoUrl?, photoPath?(사진 선택), memo
 
 ---
 
@@ -63,9 +63,9 @@
 - 쿠키 **1년** 유지 — 하단 탭바 **🔒 잠금** 버튼(`DELETE /api/auth`)으로 해당 기기 잠금. 쿠키 값은 `GROUP_PASSWORD` HMAC → 비밀번호 변경 시 전원 재로그인 (`lib/auth.ts`)
 
 #### 공부 인증 (`/upload`)
-- 멤버 칩 선택(마지막 선택 localStorage 기억) → 사진(갤러리/카메라) 브라우저 압축(1280px, JPEG, ≤0.4MB) → 날짜(2026-09-21 ~ 오늘) → 시/분/초 (1시간 이상 ✓ 표시) → 메모
-- Vercel Blob client upload (`/api/upload` 토큰) 후 `POST /api/logs`, 완료 시 그날 합계·인증 여부 표시
-- 최근 인증 10건 목록 (썸네일 → 원본 새 탭, 삭제)
+- 멤버 칩 선택(마지막 선택·저장한 멤버를 localStorage 에 기억 → 다시 들어오면 자동 선택) → 사진(**선택 사항**, 갤러리/카메라) 브라우저 압축(1280px, JPEG, ≤0.4MB) → 날짜(2026-09-21 ~ 오늘) → 시/분/초 (1시간 이상 ✓ 표시) → 메모
+- 사진이 있으면 Vercel Blob client upload (`/api/upload` 토큰) 후 `POST /api/logs`, 없으면 바로 저장, 완료 시 그날 합계·인증 여부 표시
+- 최근 인증 10건 목록 (썸네일 → 원본 새 탭, 사진 없으면 "사진 없음", 삭제)
 
 #### 멤버 (`/users`, `/users/[id]`)
 - 목록: 추가(이름 1~20자, 색 자동 배정) / 소프트 삭제
@@ -127,3 +127,4 @@ npm test
 | 2026-09-23 | 인트로 스플래시(홈, 세션당 1회) + 로그인 인트로 변형, 원형 투명 로고 `logo.png` 생성, `proxy.ts`에서 `/logo.png` 인증 예외 |
 | 2026-09-23 | 로그인을 PIN 키패드 UI로 변경, 로그인 유지 90일 → 1년, 하단 탭바 🔒 잠금 버튼 추가, 로고 원본 gitignore |
 | 2026-09-23 | 업로드 토큰 발급 실패 진단 — `GET /api/upload`(토큰 설정 여부·마지막 에러), 업로드 화면에서 실패 원인 안내, 서버 로그 출력 |
+| 2026-09-23 | 공부 인증 사진을 선택 사항으로 변경 — `StudyLog.photoUrl/photoPath` nullable 마이그레이션(`optional_photo`), API·업로드 화면 반영. 저장 성공 시에도 마지막 멤버 기억 |

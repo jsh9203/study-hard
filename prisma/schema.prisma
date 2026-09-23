@@ -54,8 +54,8 @@ model StudyLog {
   user        User     @relation(fields: [userId], references: [id])
   studyDate   DateTime @db.Date
   durationSec Int
-  photoUrl    String
-  photoPath   String
+  photoUrl    String?
+  photoPath   String?
   memo        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

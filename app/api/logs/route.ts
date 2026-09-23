@@ -14,7 +14,7 @@ type LogRow = {
   userId: number;
   studyDate: Date;
   durationSec: number;
-  photoUrl: string;
+  photoUrl: string | null;
   memo: string | null;
   createdAt: Date;
   user: { name: string };
@@ -102,8 +102,12 @@ export async function POST(request: Request) {
   if (typeof durationSec !== "number" || !Number.isInteger(durationSec) || durationSec < 1 || durationSec > MAX_DURATION) {
     return fail("공부 시간은 1초 ~ 24시간 사이여야 합니다");
   }
-  if (!isBlobUrl(photoUrl)) return fail("사진 URL이 올바르지 않습니다");
-  if (typeof photoPath !== "string" || !photoPath.startsWith("logs/")) return fail("사진 경로가 올바르지 않습니다");
+  // 사진은 선택 — 보낼 때는 URL·경로 둘 다 올바라야 함
+  const hasPhoto = photoUrl != null || photoPath != null;
+  if (hasPhoto) {
+    if (!isBlobUrl(photoUrl)) return fail("사진 URL이 올바르지 않습니다");
+    if (typeof photoPath !== "string" || !photoPath.startsWith("logs/")) return fail("사진 경로가 올바르지 않습니다");
+  }
   if (memo != null && typeof memo !== "string") return fail("메모 형식이 올바르지 않습니다");
   const memoText = typeof memo === "string" ? memo.trim() : "";
   if (memoText.length > MAX_MEMO) return fail(`메모는 ${MAX_MEMO}자 이하로 입력하세요`);
@@ -113,8 +117,8 @@ export async function POST(request: Request) {
       userId,
       studyDate: toDate(studyDate),
       durationSec,
-      photoUrl,
-      photoPath,
+      photoUrl: hasPhoto ? (photoUrl as string) : null,
+      photoPath: hasPhoto ? (photoPath as string) : null,
       memo: memoText || null,
     },
     include: { user: { select: { name: true } } },

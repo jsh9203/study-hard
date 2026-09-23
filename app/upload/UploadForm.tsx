@@ -14,7 +14,7 @@ type Log = {
   userName: string;
   studyDate: string;
   durationSec: number;
-  photoUrl: string;
+  photoUrl: string | null;
   memo: string | null;
   createdAt: string;
 };
@@ -185,28 +185,31 @@ export default function UploadForm({ today }: { today: string }) {
 
   const selectedUser = users?.find((u) => u.id === userId) ?? null;
   const canSubmit =
-    !!selectedUser && !!photo && !compressing && !submitting && dateValid && timeValid && totalSec > 0 && totalSec <= MAX_SECONDS;
+    !!selectedUser && !compressing && !submitting && dateValid && timeValid && totalSec > 0 && totalSec <= MAX_SECONDS;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSuccess(null);
     if (!selectedUser) return setError("멤버를 선택하세요");
-    if (!photo) return setError("인증 사진을 선택하세요");
     if (!dateValid) return setError(`공부 날짜는 ${SERVICE_START} ~ 오늘 사이여야 합니다`);
     if (!timeValid) return setError("분·초는 0~59 사이 숫자로 입력하세요");
     if (totalSec <= 0) return setError("공부 시간을 입력하세요");
     if (totalSec > MAX_SECONDS) return setError("공부 시간은 24시간을 넘을 수 없습니다");
 
     setSubmitting(true);
-    setProgress("사진 업로드 중… 0%");
     try {
-      const blob = await upload(`logs/${selectedUser.id}/${studyDate}.jpg`, photo.file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-        contentType: "image/jpeg",
-        onUploadProgress: ({ percentage }) => setProgress(`사진 업로드 중… ${Math.round(percentage)}%`),
-      });
+      // 사진은 선택 사항 — 있을 때만 Blob 업로드
+      let blob: { url: string; pathname: string } | null = null;
+      if (photo) {
+        setProgress("사진 업로드 중… 0%");
+        blob = await upload(`logs/${selectedUser.id}/${studyDate}.jpg`, photo.file, {
+          access: "public",
+          handleUploadUrl: "/api/upload",
+          contentType: "image/jpeg",
+          onUploadProgress: ({ percentage }) => setProgress(`사진 업로드 중… ${Math.round(percentage)}%`),
+        });
+      }
 
       setProgress("기록 저장 중…");
       await apiJson<{ log: Log }>("/api/logs", {
@@ -216,8 +219,8 @@ export default function UploadForm({ today }: { today: string }) {
           userId: selectedUser.id,
           studyDate,
           durationSec: totalSec,
-          photoUrl: blob.url,
-          photoPath: blob.pathname,
+          photoUrl: blob?.url,
+          photoPath: blob?.pathname,
           memo: memo.trim() || undefined,
         }),
       });
@@ -233,6 +236,7 @@ export default function UploadForm({ today }: { today: string }) {
         // 합계 조회 실패 시 방금 입력한 시간만 표시
       }
 
+      saveLastUser(selectedUser.id);
       setSuccess({ userName: selectedUser.name, studyDate, totalSec: dayTotal });
       replacePhoto(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -317,7 +321,9 @@ export default function UploadForm({ today }: { today: string }) {
 
         {/* 2. 사진 */}
         <section>
-          <h2 className="mb-2 text-sm font-semibold text-gray-700">인증 사진</h2>
+          <h2 className="mb-2 text-sm font-semibold text-gray-700">
+            인증 사진 <span className="font-normal text-gray-400">(선택)</span>
+          </h2>
           <label
             className={`flex cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed ${
               photo ? "border-indigo-300" : "border-gray-300"
@@ -472,15 +478,24 @@ export default function UploadForm({ today }: { today: string }) {
             <ul className={`divide-y divide-gray-100 ${recentLoading ? "opacity-60" : ""}`}>
               {recent.logs.map((log) => (
                 <li key={log.id} className="flex items-center gap-3 py-2.5">
-                  <a href={log.photoUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={log.photoUrl}
-                      alt={`${log.studyDate} 인증 사진`}
-                      loading="lazy"
-                      className="h-14 w-14 rounded-lg bg-gray-100 object-cover"
-                    />
-                  </a>
+                  {log.photoUrl ? (
+                    <a href={log.photoUrl} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={log.photoUrl}
+                        alt={`${log.studyDate} 인증 사진`}
+                        loading="lazy"
+                        className="h-14 w-14 rounded-lg bg-gray-100 object-cover"
+                      />
+                    </a>
+                  ) : (
+                    <span
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-[11px] text-gray-400"
+                      title="사진 없음"
+                    >
+                      사진 없음
+                    </span>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">
                       {formatShortDate(log.studyDate)}{" "}

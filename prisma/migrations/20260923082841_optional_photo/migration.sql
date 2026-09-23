@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "StudyLog" ALTER COLUMN "photoUrl" DROP NOT NULL,
+ALTER COLUMN "photoPath" DROP NOT NULL;
