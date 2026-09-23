@@ -64,11 +64,12 @@
 
 #### 공부 인증 (`/upload`)
 - 멤버 칩 선택(마지막 선택·저장한 멤버를 localStorage 에 기억 → 다시 들어오면 자동 선택) → 사진(**선택 사항**, 갤러리/카메라) 브라우저 압축(1280px, JPEG, ≤0.4MB) → 날짜(2026-09-21 ~ 오늘) → 시/분/초 (1시간 이상 ✓ 표시) → 메모
+- **진행 중(ACTIVE) 목표가 없는 멤버는 인증 불가** — 칩에 "목표 없음" 표시, 선택 시 안내 + 목표 생성 링크, 저장 버튼 비활성 (서버도 409 거부)
 - 사진이 있으면 Vercel Blob client upload (`/api/upload` 토큰) 후 `POST /api/logs`, 없으면 바로 저장, 완료 시 그날 합계·인증 여부 표시
 - 최근 인증 10건 목록 (썸네일 → 원본 새 탭, 사진 없으면 "사진 없음", 삭제)
 
 #### 멤버 (`/users`, `/users/[id]`)
-- 목록: 추가(이름 1~20자, 색 자동 배정) / 소프트 삭제
+- 목록: 추가(이름 1~20자, 색 자동 배정) / 소프트 삭제. 이름 오른쪽에 진행 중 목표가 없으면 **🎯 목표 생성** 버튼, 있으면 시험명 + D-day
 - 상세: 진행 중 목표 카드(D-day, 진행 중/결과 대기, 현재 벌금, 주차별 인증·벌금), 목표 생성·수정 폼(시작일 평일만·첫 주 규칙 안내), 결과 체크(D-day 다음 날부터 달성/미달성), 목표 취소(벌금 없음), 미정산 목표 정산 완료, 과거 목표 이력
 
 ### 로직 (`lib/`)
@@ -84,13 +85,13 @@
 |--------|----------|------|
 | POST / DELETE | `/api/auth` | 로그인 / 로그아웃 |
 | GET | `/api/health` | DB 연결 확인 (활성 멤버 수) |
-| GET / POST | `/api/users` | 활성 멤버 목록 / 추가 (201) |
+| GET / POST | `/api/users` | 활성 멤버 목록(`activeGoal` 포함) / 추가 (201) |
 | GET / DELETE | `/api/users/[id]` | 멤버 + 목표 요약 목록 / 소프트 삭제 |
 | GET / POST | `/api/users/[id]/goals` | 목표 목록 / 생성 (ACTIVE 중복 409) |
 | PATCH | `/api/goals/[id]` | 수정(ACTIVE만) 또는 `{status}` 종료 (거부 시 409) |
 | POST | `/api/goals/[id]/settle` | 미달성 목표 정산 완료 |
 | GET / POST | `/api/upload` | 진단(`tokenConfigured`, `lastError`) / Blob client upload 토큰 (`logs/` 경로, jpeg/png/webp, 5MB) |
-| GET / POST | `/api/logs` | 기록 조회(userId, from, to, limit) / 생성 |
+| GET / POST | `/api/logs` | 기록 조회(userId, from, to, limit) / 생성 (진행 중 목표 없으면 409) |
 | PATCH / DELETE | `/api/logs/[id]` | 기록 수정 / 삭제(Blob 사진 함께 삭제) |
 | GET | `/api/dashboard` | 대시보드 집계 |
 
@@ -128,3 +129,4 @@ npm test
 | 2026-09-23 | 로그인을 PIN 키패드 UI로 변경, 로그인 유지 90일 → 1년, 하단 탭바 🔒 잠금 버튼 추가, 로고 원본 gitignore |
 | 2026-09-23 | 업로드 토큰 발급 실패 진단 — `GET /api/upload`(토큰 설정 여부·마지막 에러), 업로드 화면에서 실패 원인 안내, 서버 로그 출력 |
 | 2026-09-23 | 공부 인증 사진을 선택 사항으로 변경 — `StudyLog.photoUrl/photoPath` nullable 마이그레이션(`optional_photo`), API·업로드 화면 반영. 저장 성공 시에도 마지막 멤버 기억 |
+| 2026-09-23 | 멤버 목록에 🎯 목표 생성 버튼(목표 있으면 시험명·D-day), 진행 중 목표 없는 멤버는 공부 인증 불가(화면 안내 + API 409), `/api/users`에 `activeGoal` 추가 |

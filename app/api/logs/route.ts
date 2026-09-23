@@ -93,6 +93,8 @@ export async function POST(request: Request) {
   if (!userId || !Number.isInteger(userId) || userId <= 0) return fail("멤버를 선택하세요");
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user || user.deletedAt) return fail("존재하지 않는 멤버입니다", 404);
+  const activeGoal = await prisma.goal.findFirst({ where: { userId, status: "ACTIVE" }, select: { id: true } });
+  if (!activeGoal) return fail("목표가 없는 멤버는 인증할 수 없습니다. 먼저 목표를 설정하세요", 409);
 
   const { studyDate, durationSec, photoUrl, photoPath, memo } = body;
   if (!isYmd(studyDate)) return fail("공부 날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)");

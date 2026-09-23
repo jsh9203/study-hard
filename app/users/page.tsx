@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import PageShell from "@/app/components/PageShell";
-import { todayKST } from "@/lib/date";
-import { formatShortDate } from "@/lib/format";
+import { dDay, todayKST } from "@/lib/date";
+import { formatDDay, formatShortDate } from "@/lib/format";
 
 interface User {
   id: number;
   name: string;
   color: string | null;
   createdAt: string;
+  activeGoal: { id: number; examName: string; examDate: string } | null;
 }
 
 async function errorOf(res: Response, fallback: string): Promise<string> {
@@ -138,7 +139,19 @@ export default function UsersPage() {
                     가입 {formatShortDate(todayKST(new Date(user.createdAt)))}
                   </span>
                 </span>
-                <span className="ml-auto text-gray-300">›</span>
+                {user.activeGoal ? (
+                  <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-gray-500">
+                    <span className="max-w-24 truncate">{user.activeGoal.examName}</span>
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-600">
+                      {formatDDay(dDay(user.activeGoal.examDate))}
+                    </span>
+                    <span className="text-gray-300">›</span>
+                  </span>
+                ) : (
+                  <span className="ml-auto shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white">
+                    🎯 목표 생성
+                  </span>
+                )}
               </Link>
               <button
                 onClick={() => remove(user)}

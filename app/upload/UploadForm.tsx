@@ -7,7 +7,13 @@ import { useEffect, useRef, useState } from "react";
 import { formatDuration, formatHms, formatShortDate } from "@/lib/format";
 import { CERTIFY_SECONDS, SERVICE_START } from "@/lib/rules";
 
-type User = { id: number; name: string; color: string | null; createdAt: string };
+type User = {
+  id: number;
+  name: string;
+  color: string | null;
+  createdAt: string;
+  activeGoal: { id: number; examName: string; examDate: string } | null; // 없으면 인증 불가
+};
 type Log = {
   id: number;
   userId: number;
@@ -184,14 +190,16 @@ export default function UploadForm({ today }: { today: string }) {
   const dateValid = studyDate >= SERVICE_START && studyDate <= today && /^\d{4}-\d{2}-\d{2}$/.test(studyDate);
 
   const selectedUser = users?.find((u) => u.id === userId) ?? null;
+  const hasGoal = !!selectedUser?.activeGoal;
   const canSubmit =
-    !!selectedUser && !compressing && !submitting && dateValid && timeValid && totalSec > 0 && totalSec <= MAX_SECONDS;
+    !!selectedUser && hasGoal && !compressing && !submitting && dateValid && timeValid && totalSec > 0 && totalSec <= MAX_SECONDS;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSuccess(null);
     if (!selectedUser) return setError("멤버를 선택하세요");
+    if (!selectedUser.activeGoal) return setError("목표를 먼저 설정해야 인증할 수 있어요");
     if (!dateValid) return setError(`공부 날짜는 ${SERVICE_START} ~ 오늘 사이여야 합니다`);
     if (!timeValid) return setError("분·초는 0~59 사이 숫자로 입력하세요");
     if (totalSec <= 0) return setError("공부 시간을 입력하세요");
@@ -312,9 +320,25 @@ export default function UploadForm({ today }: { today: string }) {
                       style={{ backgroundColor: u.color ?? "#9ca3af" }}
                     />
                     {u.name}
+                    {!u.activeGoal && (
+                      <span className={`text-[11px] font-normal ${active ? "text-indigo-100" : "text-gray-400"}`}>
+                        목표 없음
+                      </span>
+                    )}
                   </button>
                 );
               })}
+            </div>
+          )}
+          {selectedUser && !selectedUser.activeGoal && (
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+              <span>{selectedUser.name}님은 진행 중인 목표가 없어서 인증할 수 없어요.</span>
+              <Link
+                href={`/users/${selectedUser.id}`}
+                className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white"
+              >
+                🎯 목표 생성
+              </Link>
             </div>
           )}
         </section>

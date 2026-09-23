@@ -1,3 +1,4 @@
+import { fromDate } from "@/lib/date";
 import { fail, ok, readJson } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
@@ -10,9 +11,18 @@ export async function GET() {
   const users = await prisma.user.findMany({
     where: { deletedAt: null },
     orderBy: { createdAt: "asc" },
-    select: userSelect,
+    select: {
+      ...userSelect,
+      goals: { where: { status: "ACTIVE" }, select: { id: true, examName: true, examDate: true }, take: 1 },
+    },
   });
-  return ok({ users });
+  // activeGoal: 진행 중(ACTIVE) 목표 — 없으면 공부 인증 불가
+  return ok({
+    users: users.map(({ goals, ...u }) => ({
+      ...u,
+      activeGoal: goals[0] ? { ...goals[0], examDate: fromDate(goals[0].examDate) } : null,
+    })),
+  });
 }
 
 export async function POST(request: Request) {
@@ -30,5 +40,5 @@ export async function POST(request: Request) {
   }
 
   const user = await prisma.user.create({ data: { name, color }, select: userSelect });
-  return ok({ user }, { status: 201 });
+  return ok({ user: { ...user, activeGoal: null } }, { status: 201 });
 }
