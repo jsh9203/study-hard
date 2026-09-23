@@ -44,3 +44,6 @@ next-env.d.ts
 
 # prisma
 /app/generated/
+
+# 로고 원본 (logo.png 생성용, 배포 제외)
+/public/study-hard_origin.png

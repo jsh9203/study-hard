@@ -57,9 +57,10 @@
 - 서버 컴포넌트 (`connection()`으로 요청마다 계산), 집계 `lib/dashboard.ts` `buildDashboard` + 로더 `app/dashboard-ui/load.ts`
 
 #### 로그인 (`/login`)
-- 인트로(큰 로고) 1200ms 후 로고 축소(w-24) + 비밀번호 입력 폼 등장, 로그인 성공 시 `splashShown` 설정 → 홈 스플래시 생략
+- 인트로(큰 로고) 1200ms 후 로고 축소(w-24) + **PIN 키패드**(숫자 최대 8자리, 물리 키보드 지원, 오입력 시 흔들림) 등장, 로그인 성공 시 `splashShown` 설정 → 홈 스플래시 생략
+- `GROUP_PASSWORD`는 숫자 PIN으로 설정
 - `proxy.ts`: 쿠키 없으면 페이지는 `/login?next=` 리다이렉트, API는 401 (`/login`, `/api/auth`, 정적 파일, `/logo.png` 예외)
-- 쿠키(90일) 값은 `GROUP_PASSWORD` HMAC → 비밀번호 변경 시 전원 재로그인 (`lib/auth.ts`)
+- 쿠키 **1년** 유지 — 하단 탭바 **🔒 잠금** 버튼(`DELETE /api/auth`)으로 해당 기기 잠금. 쿠키 값은 `GROUP_PASSWORD` HMAC → 비밀번호 변경 시 전원 재로그인 (`lib/auth.ts`)
 
 #### 공부 인증 (`/upload`)
 - 멤버 칩 선택(마지막 선택 localStorage 기억) → 사진(갤러리/카메라) 브라우저 압축(1280px, JPEG, ≤0.4MB) → 날짜(2026-09-21 ~ 오늘) → 시/분/초 (1시간 이상 ✓ 표시) → 메모
@@ -94,7 +95,7 @@
 | GET | `/api/dashboard` | 대시보드 집계 |
 
 ## 🖼️ 정적 파일
-- `public/logo.png` — 원형 로고 (768×768, 원 밖 투명). `public/study-hard_origin.png`(원본, 회색 배경)에서 원을 검출해 생성
+- `public/logo.png` — 원형 로고 (768×768, 원 밖 투명). `public/study-hard_origin.png`(원본, 회색 배경, **gitignore**)에서 원을 검출해 생성
 - `app/icon.svg` — 파비콘
 
 ---
@@ -124,3 +125,4 @@ npm test
 | 2026-09-23 | Neon(ap-southeast-1) 연결, 초기 마이그레이션 `init` 적용, `/api/health` DB 연결 확인 |
 | 2026-09-23 | P1 MVP — 멤버·목표(생성/수정/결과 체크/취소/정산), 공부 인증 업로드(브라우저 압축 + Vercel Blob), 메인 대시보드, 하단 탭바. 에이전트 3개 병렬 구현 후 통합, 실제 DB·Blob E2E 25항목 통과 |
 | 2026-09-23 | 인트로 스플래시(홈, 세션당 1회) + 로그인 인트로 변형, 원형 투명 로고 `logo.png` 생성, `proxy.ts`에서 `/logo.png` 인증 예외 |
+| 2026-09-23 | 로그인을 PIN 키패드 UI로 변경, 로그인 유지 90일 → 1년, 하단 탭바 🔒 잠금 버튼 추가, 로고 원본 gitignore |

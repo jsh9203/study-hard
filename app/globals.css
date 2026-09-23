@@ -5,3 +5,22 @@ body {
   color: var(--color-gray-900);
   font-family: "Pretendard", system-ui, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
+
+/* PIN 오입력 흔들림 */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-8px);
+  }
+  40%,
+  80% {
+    transform: translateX(8px);
+  }
+}
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}

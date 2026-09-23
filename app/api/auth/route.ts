@@ -22,6 +22,6 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
-  res.cookies.delete(AUTH_COOKIE);
+  res.cookies.set(AUTH_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
   return res;
 }
