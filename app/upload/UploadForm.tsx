@@ -58,6 +58,20 @@ function toInt(value: string): number {
   return value === "" ? 0 : Number(value);
 }
 
+// Blob 토큰 발급 실패 시 원인 확인 (라이브러리 에러 메시지만으로는 원인을 알 수 없음)
+async function diagnoseUpload(original: string): Promise<string> {
+  try {
+    const res = await fetch("/api/upload", { cache: "no-store" });
+    if (res.status === 401) return "로그인이 만료되었습니다. 🔒 잠금 후 다시 로그인해 주세요.";
+    const data = await res.json().catch(() => null);
+    if (!data) return `업로드 서버 응답이 올바르지 않습니다 (HTTP ${res.status})`;
+    if (!data.tokenConfigured) return "서버에 BLOB_READ_WRITE_TOKEN 이 설정되지 않았습니다 (Vercel 환경변수 확인 후 재배포)";
+    return `사진 업로드 토큰 발급 실패: ${data.lastError ?? original}`;
+  } catch {
+    return original;
+  }
+}
+
 export default function UploadForm({ today }: { today: string }) {
   const [users, setUsers] = useState<User[] | null>(null);
   const [usersError, setUsersError] = useState("");
@@ -228,7 +242,8 @@ export default function UploadForm({ today }: { today: string }) {
       setMemo("");
       setReloadKey((k) => k + 1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "업로드에 실패했습니다");
+      const message = err instanceof Error ? err.message : "업로드에 실패했습니다";
+      setError(/client token/i.test(message) ? await diagnoseUpload(message) : message);
     } finally {
       setSubmitting(false);
       setProgress("");

@@ -89,7 +89,7 @@
 | GET / POST | `/api/users/[id]/goals` | 목표 목록 / 생성 (ACTIVE 중복 409) |
 | PATCH | `/api/goals/[id]` | 수정(ACTIVE만) 또는 `{status}` 종료 (거부 시 409) |
 | POST | `/api/goals/[id]/settle` | 미달성 목표 정산 완료 |
-| POST | `/api/upload` | Blob client upload 토큰 (`logs/` 경로, jpeg/png/webp, 5MB) |
+| GET / POST | `/api/upload` | 진단(`tokenConfigured`, `lastError`) / Blob client upload 토큰 (`logs/` 경로, jpeg/png/webp, 5MB) |
 | GET / POST | `/api/logs` | 기록 조회(userId, from, to, limit) / 생성 |
 | PATCH / DELETE | `/api/logs/[id]` | 기록 수정 / 삭제(Blob 사진 함께 삭제) |
 | GET | `/api/dashboard` | 대시보드 집계 |
@@ -126,3 +126,4 @@ npm test
 | 2026-09-23 | P1 MVP — 멤버·목표(생성/수정/결과 체크/취소/정산), 공부 인증 업로드(브라우저 압축 + Vercel Blob), 메인 대시보드, 하단 탭바. 에이전트 3개 병렬 구현 후 통합, 실제 DB·Blob E2E 25항목 통과 |
 | 2026-09-23 | 인트로 스플래시(홈, 세션당 1회) + 로그인 인트로 변형, 원형 투명 로고 `logo.png` 생성, `proxy.ts`에서 `/logo.png` 인증 예외 |
 | 2026-09-23 | 로그인을 PIN 키패드 UI로 변경, 로그인 유지 90일 → 1년, 하단 탭바 🔒 잠금 버튼 추가, 로고 원본 gitignore |
+| 2026-09-23 | 업로드 토큰 발급 실패 진단 — `GET /api/upload`(토큰 설정 여부·마지막 에러), 업로드 화면에서 실패 원인 안내, 서버 로그 출력 |

@@ -3,6 +3,14 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { fail, ok } from "@/lib/http";
 
+// 같은 인스턴스에서 마지막 실패 사유 (진단용)
+let lastError: string | null = null;
+
+// 진단: 토큰 설정 여부 (값은 노출하지 않음)
+export async function GET() {
+  return ok({ tokenConfigured: !!process.env.BLOB_READ_WRITE_TOKEN, lastError });
+}
+
 export async function POST(request: Request) {
   let body: HandleUploadBody;
   try {
@@ -26,8 +34,11 @@ export async function POST(request: Request) {
         };
       },
     });
+    lastError = null;
     return ok(result);
   } catch (e) {
-    return fail(e instanceof Error ? e.message : "업로드 토큰 발급 실패");
+    lastError = e instanceof Error ? e.message : String(e);
+    console.error("[upload] 토큰 발급 실패:", lastError);
+    return fail(lastError || "업로드 토큰 발급 실패");
   }
 }
