@@ -87,3 +87,4 @@ npm test
 | 2026-09-23 | 기획 확정 (`PLAN.md`) |
 | 2026-09-23 | 서비스명 "Study Hard" 확정 — 페이지 타이틀·로그인·헤더·패키지명 반영 |
 | 2026-09-23 | P0 세팅 — Next.js 16 + Tailwind 4 + Prisma 6(adapter-pg) 스캐폴드, 스키마(User/Goal/StudyLog), `lib/date·penalty·rules` + 단위 테스트 19개, 그룹 비밀번호 인증(`proxy.ts`, `/login`, `/api/auth`), `/api/health`, `vercel.json`(sin1) |
+| 2026-09-23 | Neon(ap-southeast-1) 연결, 초기 마이그레이션 `init` 적용, `/api/health` DB 연결 확인 |
