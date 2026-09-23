@@ -4,14 +4,14 @@ export default function PageShell({
   action,
   children,
 }: {
-  title: string;
+  title: React.ReactNode;
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pt-6 pb-24">
       <header className="mb-5 flex items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">{title}</h1>
+        <h1 className="flex min-w-0 items-center gap-2 text-xl font-bold">{title}</h1>
         {action}
       </header>
       {children}

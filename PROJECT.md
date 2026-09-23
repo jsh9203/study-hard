@@ -47,21 +47,55 @@
 
 ## 📄 구현된 기능
 
-### 인증 (그룹 비밀번호)
-- `proxy.ts`: 쿠키 없으면 페이지는 `/login?next=` 리다이렉트, API는 401
-- `/login`: 비밀번호 입력 → `POST /api/auth` → httpOnly 쿠키(90일). 쿠키 값은 `GROUP_PASSWORD` HMAC이라 비밀번호 변경 시 전원 재로그인
-- `lib/auth.ts`
+### 페이지
+#### 메인 대시보드 (`/`)
+- 인트로 스플래시 (`app/components/Splash.tsx`, 세션당 1회 — `sessionStorage.splashShown`)
+- 헤더: 로고 + "📸 인증하기" 버튼
+- 요약 타일: 총 누적 벌금 / 이번 주 그룹 공부시간 / 멤버 수
+- 멤버 카드(→ `/users/[id]`): D-day·시험명(결과 대기/목표 없음 배지), 이번 주 인증 `N/목표` + 7칸 진행 표시, 이번 주·누적 공부시간, 누적 인증일수, 벌금(미정산 배지), 이번 주 예상 벌금(회색)
+- 이번 주 현황 표: 멤버 × 월~일, ✓+시간(1시간 이상) / 회색 시간(미달) / -, 오늘 강조, 목표 기간 밖 날짜는 흐리게
+- 서버 컴포넌트 (`connection()`으로 요청마다 계산), 집계 `lib/dashboard.ts` `buildDashboard` + 로더 `app/dashboard-ui/load.ts`
 
-### 벌금/날짜 로직
-- `lib/date.ts`: KST 오늘, 주 시작/끝, 요일, D-day
-- `lib/penalty.ts`: `weekTarget`(첫 주·D-day 주 규칙), `goalWeeks`(주차별 목표/인증일/확정 벌금), `goalPenalty`
-- `lib/rules.ts`: 규칙 상수
+#### 로그인 (`/login`)
+- 인트로(큰 로고) 1200ms 후 로고 축소(w-24) + 비밀번호 입력 폼 등장, 로그인 성공 시 `splashShown` 설정 → 홈 스플래시 생략
+- `proxy.ts`: 쿠키 없으면 페이지는 `/login?next=` 리다이렉트, API는 401 (`/login`, `/api/auth`, 정적 파일, `/logo.png` 예외)
+- 쿠키(90일) 값은 `GROUP_PASSWORD` HMAC → 비밀번호 변경 시 전원 재로그인 (`lib/auth.ts`)
+
+#### 공부 인증 (`/upload`)
+- 멤버 칩 선택(마지막 선택 localStorage 기억) → 사진(갤러리/카메라) 브라우저 압축(1280px, JPEG, ≤0.4MB) → 날짜(2026-09-21 ~ 오늘) → 시/분/초 (1시간 이상 ✓ 표시) → 메모
+- Vercel Blob client upload (`/api/upload` 토큰) 후 `POST /api/logs`, 완료 시 그날 합계·인증 여부 표시
+- 최근 인증 10건 목록 (썸네일 → 원본 새 탭, 삭제)
+
+#### 멤버 (`/users`, `/users/[id]`)
+- 목록: 추가(이름 1~20자, 색 자동 배정) / 소프트 삭제
+- 상세: 진행 중 목표 카드(D-day, 진행 중/결과 대기, 현재 벌금, 주차별 인증·벌금), 목표 생성·수정 폼(시작일 평일만·첫 주 규칙 안내), 결과 체크(D-day 다음 날부터 달성/미달성), 목표 취소(벌금 없음), 미정산 목표 정산 완료, 과거 목표 이력
+
+### 로직 (`lib/`)
+- `date.ts`: KST 오늘, 주 시작/끝, 요일, D-day, `YYYY-MM-DD` ↔ `@db.Date`
+- `penalty.ts`: `weekTarget`(첫 주·D-day 주 규칙), `goalWeeks`(주차별 목표/인증일/확정 벌금), `goalPenalty`
+- `goal.ts`: `summarizeGoal`(phase·실시간/스냅샷 벌금·미정산), `closeGoalFields`(달성=자동 정산, 미달성=미정산, 취소=벌금 없음), `canClose`, `validateGoalDates`
+- `dashboard.ts`: 대시보드 집계 (순수 함수)
+- `queries.ts`: `serializeGoal`, `loadDailySeconds` / `http.ts`: API 응답 헬퍼 / `format.ts`: 시간·금액·D-day 표시
+- 테스트: `penalty.test.ts`, `goal.test.ts`, `dashboard.test.ts` (38개)
 
 ### API
 | Method | Endpoint | 설명 |
 |--------|----------|------|
 | POST / DELETE | `/api/auth` | 로그인 / 로그아웃 |
 | GET | `/api/health` | DB 연결 확인 (활성 멤버 수) |
+| GET / POST | `/api/users` | 활성 멤버 목록 / 추가 (201) |
+| GET / DELETE | `/api/users/[id]` | 멤버 + 목표 요약 목록 / 소프트 삭제 |
+| GET / POST | `/api/users/[id]/goals` | 목표 목록 / 생성 (ACTIVE 중복 409) |
+| PATCH | `/api/goals/[id]` | 수정(ACTIVE만) 또는 `{status}` 종료 (거부 시 409) |
+| POST | `/api/goals/[id]/settle` | 미달성 목표 정산 완료 |
+| POST | `/api/upload` | Blob client upload 토큰 (`logs/` 경로, jpeg/png/webp, 5MB) |
+| GET / POST | `/api/logs` | 기록 조회(userId, from, to, limit) / 생성 |
+| PATCH / DELETE | `/api/logs/[id]` | 기록 수정 / 삭제(Blob 사진 함께 삭제) |
+| GET | `/api/dashboard` | 대시보드 집계 |
+
+## 🖼️ 정적 파일
+- `public/logo.png` — 원형 로고 (768×768, 원 밖 투명). `public/study-hard_origin.png`(원본, 회색 배경)에서 원을 검출해 생성
+- `app/icon.svg` — 파비콘
 
 ---
 
@@ -88,3 +122,5 @@ npm test
 | 2026-09-23 | 서비스명 "Study Hard" 확정 — 페이지 타이틀·로그인·헤더·패키지명 반영 |
 | 2026-09-23 | P0 세팅 — Next.js 16 + Tailwind 4 + Prisma 6(adapter-pg) 스캐폴드, 스키마(User/Goal/StudyLog), `lib/date·penalty·rules` + 단위 테스트 19개, 그룹 비밀번호 인증(`proxy.ts`, `/login`, `/api/auth`), `/api/health`, `vercel.json`(sin1) |
 | 2026-09-23 | Neon(ap-southeast-1) 연결, 초기 마이그레이션 `init` 적용, `/api/health` DB 연결 확인 |
+| 2026-09-23 | P1 MVP — 멤버·목표(생성/수정/결과 체크/취소/정산), 공부 인증 업로드(브라우저 압축 + Vercel Blob), 메인 대시보드, 하단 탭바. 에이전트 3개 병렬 구현 후 통합, 실제 DB·Blob E2E 25항목 통과 |
+| 2026-09-23 | 인트로 스플래시(홈, 세션당 1회) + 로그인 인트로 변형, 원형 투명 로고 `logo.png` 생성, `proxy.ts`에서 `/logo.png` 인증 예외 |
