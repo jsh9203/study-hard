@@ -24,3 +24,32 @@ body {
 .animate-shake {
   animation: shake 0.4s ease-in-out;
 }
+
+/* iOS Safari 날짜 입력칸: 고유 최소 폭으로 칸 밖으로 넘치고, 값이 비면 높이가 줄어드는 문제 보정 */
+/* base 레이어: bg-*, disabled:* 같은 Tailwind 유틸리티가 우선하도록 */
+@layer base {
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    min-height: calc(1.25rem + 1rem + 2px); /* 행간 + py-2 + 테두리 = 일반 입력칸 높이 */
+    background-color: #fff;
+    text-align: left;
+  }
+  input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+}
+
+/* iOS 는 16px 미만 입력칸에 포커스하면 화면을 확대하므로 모바일에서는 16px 로 */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+    line-height: 1.25rem; /* 행간 고정 → 입력칸 높이 불변 */
+  }
+}

@@ -104,7 +104,7 @@ export default function GoalForm({
         />
       </label>
       <div className="grid grid-cols-2 gap-3">
-        <label className="block">
+        <label className="block min-w-0">
           <span className="mb-1 block text-sm font-medium text-gray-700">시작일 (평일)</span>
           <input
             type="date"
@@ -114,7 +114,7 @@ export default function GoalForm({
             className={`${inputClass} ${errors.startDate ? "border-red-400" : ""}`}
           />
         </label>
-        <label className="block">
+        <label className="block min-w-0">
           <span className="mb-1 block text-sm font-medium text-gray-700">시험일 (D-day)</span>
           <input
             type="date"
